@@ -9,12 +9,13 @@
 #include <condition_variable>
 
 using namespace std;
+
 string text;
 mutex m;
 condition_variable cv;
 bool ready = true;
 bool processed = true;
-bool exitval = true;          //til at lukke trådene
+bool exitval = true;            //til at lukke trådene
 
 static struct termios _new;
 static struct termios _old;
@@ -52,14 +53,14 @@ void udskriv(){
 
 //Funktion til at aendre kurt til viggo
 void Kurt_converter(){
-  const auto timeWindow = std::chrono::milliseconds(1000);
+  const auto timeWindow = std::chrono::milliseconds(10000);
   int n;
   while (exitval)
   {
     auto start = std::chrono::steady_clock::now();
     {
       lock_guard<mutex> lk(m);
-      n=text.find("kurt");        //finder position for 'kurt'
+      n=text.find("kurt");            //finder position for 'kurt'
       while(n!=-1){
         n=text.find("kurt");
         if(n!=-1){
@@ -84,13 +85,13 @@ void Kurt_converter(){
 void writeOut()
 {
 
-   const auto timeWindow = std::chrono::milliseconds(1000);
+   const auto timeWindow = std::chrono::milliseconds(10000);
    while (exitval)
    {
         auto start = std::chrono::steady_clock::now();
         {
           lock_guard<mutex> lk(m);
-          ofstream out("output.txt");
+          ofstream out("output.txt");     //opretter txt-fil
           out<<text;
           out.close();
         }
@@ -116,7 +117,7 @@ int main(void) {
      {
        std::unique_lock<std::mutex> lk(m);
        cv.wait(lk, []{return processed;});
-       if(text.back() == 27){
+       if(text.back() == 27){         //lukker program ved tryk på ESC
          cout << "exit" << '\n';
          ready = true;
          processed = false;
