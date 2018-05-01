@@ -14,7 +14,6 @@ string text;
 mutex m;
 condition_variable cv;
 bool ready = true;
-bool processed = true;
 bool exitval = true;            //til at lukke trådene
 
 static struct termios _new;
@@ -45,7 +44,6 @@ void udskriv(){
       printf("\033c");                //clear terminal
       cout << text << "\n";
       ready = false;
-      processed = true;
     }
     cv.notify_all();
   }
@@ -68,7 +66,6 @@ void Kurt_converter(){
         }
       }
       ready=true;
-      processed = false;
     }
     cv.notify_all();
     auto end = std::chrono::steady_clock::now();
@@ -114,19 +111,20 @@ int main(void) {
   thread screen(udskriv);
   while(1){
     temp_text = getchar();
-     {
+    if(temp_text.back() == 27){
+      {
+        lock_guard<mutex> lk(m);        //lukker program ved tryk på ESC
+        cout << "exit" << '\n';
+        ready = true;
+      }
+      exitval = false;
+      break;
+    }
+    {
        std::unique_lock<std::mutex> lk(m);
-       cv.wait(lk, []{return processed;});
-       if(text.back() == 27){         //lukker program ved tryk på ESC
-         cout << "exit" << '\n';
-         ready = true;
-         processed = false;
-         exitval = false;
-         break;
-       }
+       cv.wait(lk, []{return ready == false;});
        text += temp_text;
        ready = true;
-       processed = false;
     }
     cv.notify_all();
   }
