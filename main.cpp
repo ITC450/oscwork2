@@ -13,7 +13,7 @@ using namespace std;
 string text;
 mutex m;
 condition_variable cv;
-bool ready = true;
+bool ready = false;
 bool exitval = true;            //til at lukke trådene
 
 static struct termios _new;
@@ -43,9 +43,7 @@ void udskriv(){
       cv.wait(lk, []{return ready;});
       printf("\033c");                //clear terminal
       cout << text << "\n";
-      ready = false;
     }
-    cv.notify_all();
   }
 }
 
@@ -121,8 +119,7 @@ int main(void) {
       break;
     }
     {
-       std::unique_lock<std::mutex> lk(m);
-       cv.wait(lk, []{return ready == false;});
+       std::lock_guard<std::mutex> lk(m);
        text += temp_text;
        ready = true;
     }
